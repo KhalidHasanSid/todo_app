@@ -4,8 +4,12 @@ function setUser(id,user){
     userMap.set(id,user)
 }
 
-function getUser(id,user){
+function getUser(id){
    return  userMap.get(id)
 }
 
-export{setUser,getUser}
+function deleteUser(id){
+   return userMap.delete(id)
+}
+
+export{setUser,getUser,deleteUser}

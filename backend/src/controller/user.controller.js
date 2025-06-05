@@ -3,7 +3,8 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/apiResponse.js";
 import { apiError } from "../utils/apiError.js";
 import { v4 as uuidv4 } from 'uuid';
-import { getUser, setUser } from "../utils/authService.js";
+import { deleteUser, getUser, setUser } from "../utils/authService.js";
+import apiResponse from "../utils/apiResponse.js";
 
 
 const registerUser =asyncHandler(async(req,res, err)=>{
@@ -124,13 +125,21 @@ const loginUser = asyncHandler(async(req,res,err)=>{
         }).json( new ApiResponse(200,  "Login successful"))
   
 
-})  
+})     
 
-const chk=asyncHandler((req,res)=>{
-  console.log("hello wordl")
+
+const logout= asyncHandler(async(req,res)=>{
+  const id= req.cookies.uid
+
+  const logout=deleteUser(id)
+
+  if(!logout) throw new apiError(400,"so,ething went wrong")
+  res.json(new apiResponse(200,"logout succefully"))
 })
 
 
 
 
-export {registerUser,loginUser, chk}
+
+
+export {registerUser,loginUser,logout}
