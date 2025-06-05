@@ -124,7 +124,13 @@ const loginUser = asyncHandler(async(req,res,err)=>{
         }).json( new ApiResponse(200,  "Login successful"))
   
 
+})  
+
+const chk=asyncHandler((req,res)=>{
+  console.log("hello wordl")
 })
 
 
-export {registerUser,loginUser}
+
+
+export {registerUser,loginUser, chk}

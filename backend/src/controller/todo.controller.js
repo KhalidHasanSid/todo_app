@@ -47,7 +47,10 @@ const newTodo =asyncHandler(async(req, res, next)=>{
 })
 
 
-const getTodo =()=>asyncHandler(async (req,res,next)=>{
+const getTodo =asyncHandler(async (req,res,next)=>{
+
+
+  console.log("==================")
 
     const result =await Note.findOne({user:req.user._id})
     if(!result|| result.length===0)
