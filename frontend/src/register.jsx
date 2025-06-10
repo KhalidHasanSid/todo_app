@@ -1,5 +1,6 @@
 import React from 'react'
 import axios from 'axios'
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 export default function Register() {
     const [username,setUsername]= React.useState('')
@@ -13,7 +14,7 @@ export default function Register() {
 
     try {
       const response = await axios.post(
-        "http://localhost:3800/api/v1/user/register",
+        "http://localhost:6800/api/v1/user/register",
         { username,email, password },
         { withCredentials: true }
       );
@@ -35,10 +36,16 @@ export default function Register() {
 
   return (<>
     <label >Username</label>
-    <input type='text'  value={username} onChange= {(e) => setUsername(e.target.value)}></input>
-     <input type='text'  value={email} onChange= {(e) => setEmail(e.target.value)}></input>
-    <input type='password'  value={password} onChange= {(e) => setPassword(e.target.value)}></input>
-    <button type='submit' onClick={submit}> </button>
+    <input type='text'  value={username}  required={true}   onChange= {(e) => setUsername(e.target.value)}></input>
+     <input type='text'  value={email}  required={true}   onChange= {(e) => setEmail(e.target.value)}></input>
+    <input type='password'  value={password}  required={true} onChange= {(e) => setPassword(e.target.value)}></input>
+    <button type='submit' onClick={submit}>  </button>
+
+     <Link to="/login">
+     <button type="button">
+          Sign In
+     </button>
+ </Link>
     </>
   )
 }
