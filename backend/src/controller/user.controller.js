@@ -93,7 +93,7 @@ const registerUser =asyncHandler(async(req,res, err)=>{
 
 const loginUser = asyncHandler(async(req,res,err)=>{
   const {username  ,password} =req.body
-   console.log("hello world")
+   console.log("hello world",username,"=",password)
    if(!username || !password)
     throw new apiError(400,"something missing!")
 
@@ -103,26 +103,31 @@ const loginUser = asyncHandler(async(req,res,err)=>{
       { email: username }
     ]
   })
+  console.log(existUser)
   if(!existUser)
     throw new apiError(400,"something missing!")
 
-  const authenticated = existUser.validatePassword(password)
+   let authenticated=false 
+  authenticated = await existUser.validatePassword(password)
+  console.log(authenticated)
 
   if(!authenticated)
 
-    throw new apiError(400,"Invalid Password!")
+   { throw new apiError(400,"Invalid Password ok!")}
 
   const sessionID =uuidv4()
 
   setUser(sessionID,existUser)
+
+  console.log("=============")
    
 
 
   res.cookie("uid", sessionID, {
-          httpOnly: true,
+          httpOnly: false,
           secure: false,
           sameSite: "lax",
-        }).json( new ApiResponse(200,  "Login successful"))
+        }).json( new ApiResponse(200,sessionID,  "Login successful"))
   
 
 })     

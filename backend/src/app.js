@@ -4,7 +4,9 @@ import bodyParser from 'body-parser'
 import cookieParser from 'cookie-parser'
 
 const App= express()
-App.use(cors())
+App.use(cors({ origin: 'http://localhost:5173', 
+      credentials: true 
+    }))
 
 App.use(bodyParser.json())
 
