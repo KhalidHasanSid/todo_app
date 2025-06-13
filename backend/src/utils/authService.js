@@ -12,4 +12,4 @@ function deleteUser(id){
    return userMap.delete(id)
 }
 
-export{setUser,getUser,deleteUser}
+export{setUser,getUser,deleteUser,userMap}

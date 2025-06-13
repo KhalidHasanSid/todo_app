@@ -6,7 +6,7 @@ const userRouter =Router()
 
 userRouter.route('/register').post(registerUser)
 userRouter.route('/login').post(loginUser)
-userRouter.route('/logout').post(auth,logout)
+userRouter.route('/logout').post(logout)
 
 
 export default userRouter

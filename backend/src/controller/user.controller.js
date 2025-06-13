@@ -3,14 +3,14 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/apiResponse.js";
 import { apiError } from "../utils/apiError.js";
 import { v4 as uuidv4 } from 'uuid';
-import { deleteUser, getUser, setUser } from "../utils/authService.js";
+import { deleteUser, getUser, setUser,userMap } from "../utils/authService.js";
 import apiResponse from "../utils/apiResponse.js";
 
 
 const registerUser =asyncHandler(async(req,res, err)=>{
     const  {username, email,password }=req.body
   
-    if(!username||!email || !password)  { throw new apiError(400,"you miss a variable")}
+    if(!username||!email || !password)  { throw new apiError(405,"you miss a variable")}
 
 
 
@@ -22,7 +22,7 @@ const registerUser =asyncHandler(async(req,res, err)=>{
 
       if(existUser){ 
        
-        throw new apiError(399,"patient already exist")}  
+        throw new apiError(399,"user already exist")}  
         
 
       const newUser= await User.create({
@@ -134,9 +134,13 @@ const loginUser = asyncHandler(async(req,res,err)=>{
 
 
 const logout= asyncHandler(async(req,res)=>{
-  const id= req.cookies.uid
+  console.log("bbb")
+  const token= req.cookies.uid
+  
 
-  const logout=deleteUser(id)
+  const logout=deleteUser(token)
+  console.log(userMap)
+
 
   if(!logout) throw new apiError(400,"so,ething went wrong")
   res.json(new apiResponse(200,"logout succefully"))

@@ -25,7 +25,8 @@ const newTodo =asyncHandler(async(req, res, next)=>{
 
     ]
     })
-     res.json(new apiResponse(200,userNote,"new Note Created "))
+     res.json(new apiResponse(200,newNote
+      ,"new Note Created "))
 
 }
     else{
@@ -76,6 +77,14 @@ const deleteTodo= asyncHandler(async (req,res,err)=>{
 
      if(!id) throw new apiError(400,"id is missing")
 
+      const existnote = await Note.findOne({
+  user: req.user.id,                    
+  "Notes._id": id               
+});
+    
+    if(!existnote)
+      throw new apiError(401,"unauthorized acces ")
+
      const result = await Note.findOneAndUpdate( { user: req.user._id },  { $pull: { Notes: { _id: id } } })
 
         if(!result)
@@ -107,6 +116,16 @@ const updateTodo= asyncHandler(async(req,res)=>{
   console.log(typeof(id),req.user._id,"chk=",id)
   const {title, description,status} = req.body; 
 
+   if(!id) throw new apiError(400,"id is missing")
+
+      const existnote = await Note.findOne({
+  user: req.user.id,                    
+  "Notes._id": id               
+});
+    
+    if(!existnote)
+      throw new apiError(401,"unauthorized acces ")
+
   if(!title && !description&& !status) throw new apiError(400,"bad request")
 
   const updateFields = {};
@@ -122,7 +141,7 @@ console.log(updateFields)
 
 const result = await Note.findOneAndUpdate(
   { user: req.user._id , "Notes._id": id },
-  { $set: updateFields },
+  { $set: updateFields }, { new: true, runValidators: true }
 
 );
 

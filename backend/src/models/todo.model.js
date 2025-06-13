@@ -26,9 +26,12 @@ const notesSchema = mongoose.Schema({
                 required:true
                },
                status:{
-                default:"In progress",
+                 type:String,
+                 lowercase:true,
+                default:"in progress",
                 type:String,
-                required:true
+                enum:["in progress",'done'],
+                
                }
 
                
