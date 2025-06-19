@@ -32,7 +32,34 @@ const notesSchema = mongoose.Schema({
                 type:String,
                 enum:["in progress",'done'],
                 
-               }
+               },
+
+               viewHistory:[
+                 {
+               prevtitle: {type:String,
+                trim: true,
+                
+                     
+               },
+               prevdescription: {type:String,
+                trim: true,
+              
+                     
+               },
+               prevdate:{
+                type:Date,
+               
+               },
+               prevstatus:{
+                 type:String,
+                 lowercase:true,
+                enum:["in progress",'done'],
+                
+               },
+                updatedby:
+                 { type:String}}
+
+               ]
 
                
 

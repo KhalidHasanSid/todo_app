@@ -53,7 +53,9 @@ const getTodo =asyncHandler(async (req,res,next)=>{
 
   console.log("==================")
 
-    const result =await Note.findOne({user:req.user._id})
+    const result =await Note.findOne({user:req.user._id}).select(
+        "-Notes.viewHistory"
+    )
     if(!result|| result.length===0)
          res.json(new apiResponse(200,[],"no notes found"))
 
@@ -77,18 +79,18 @@ const deleteTodo= asyncHandler(async (req,res,err)=>{
 
      if(!id) throw new apiError(400,"id is missing")
 
-      const existnote = await Note.findOne({
-  user: req.user.id,                    
-  "Notes._id": id               
-});
+//       const existnote = await Note.findOne({
+//   user: req.user.id,                    
+//   "Notes._id": id               
+// });
     
-    if(!existnote)
-      throw new apiError(401,"unauthorized acces ")
+//     if(!existnote)
+//       throw new apiError(401,"unauthorized acces ")
 
      const result = await Note.findOneAndUpdate( { user: req.user._id },  { $pull: { Notes: { _id: id } } })
 
         if(!result)
-            { throw new apiError(400,"id is missing")}
+            { throw new apiError(500,"unauthorized access")}
 
         res.json(new apiResponse(200,result, "successfullly deleted "))
 
@@ -136,13 +138,30 @@ if (status) updateFields["Notes.$.status"] = status;
 console.log(updateFields)
 
 
+const currentNote = await Note.findOne(
+  { "Notes._id": id },
+  { "Notes.$": 1, _id: 0 }
+);
+
+  if(!currentNote) throw new apiError(400, "The user who created this note has deleted it ")
+
+    console.log(currentNote)
 
 
-
-const result = await Note.findOneAndUpdate(
-  { user: req.user._id , "Notes._id": id },
-  { $set: updateFields }, { new: true, runValidators: true }
-
+const result = await Note.updateOne(
+  { "Notes._id": id},
+  {
+    $set: updateFields,
+    $push: {
+      "Notes.$.viewHistory": {
+        prevtitle: currentNote.title,
+        prevdescription: currentNote.description,
+        prevstatus: currentNote.status,
+        updatedby: req.user.username
+      }
+    }
+  },
+  { new: true, runValidators: true }
 );
 
 if(!result)throw new apiError(400,"something went wrong")

@@ -16,7 +16,10 @@ App.use(cookieParser())
 
 import userRouter from './route/user.route.js'
 import todoRouter from './route/todo.router.js'
+import shareRouter from './route/share.route.js'
 App.use('/api/v1/user',userRouter)
 App.use('/api/v1/todo',todoRouter)
+App.use('/api/v1/shareTo',shareRouter)
+
 
 export default App 
