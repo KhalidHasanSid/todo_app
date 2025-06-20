@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import Share from './Share';
+import SharedNotes from './SharedNotes';
 
 export default function Note() {
   const [notes, setNotes] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', description: '' });
   const [newNote, setNewNote] = useState({ title: '', description: '' });
+  const [shareNoteId, setShareNoteId] = useState(null);
+  const [showSharedNotes, setShowSharedNotes] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,7 +19,9 @@ export default function Note() {
 
   const fetchNotes = async () => {
     try {
-      const response = await axios.get('http://localhost:6800/api/v1/todo/gettodo', { withCredentials: true });
+      const response = await axios.get('http://localhost:6800/api/v1/todo/gettodo', {
+        withCredentials: true,
+      });
       setNotes(response.data.data);
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -29,80 +35,118 @@ export default function Note() {
       });
       setNewNote({ title: '', description: '' });
       fetchNotes();
-      alert("Note added successfully");
+      alert('Note added successfully');
     } catch (err) {
-      alert("Failed to add note");
+      alert('Failed to add note');
       console.error('Add note error:', err.response?.data || err.message);
     }
   };
 
   const handleDone = async (id) => {
     try {
-      await axios.patch(`http://localhost:6800/api/v1/todo/updatetodo/${id}`, { status: 'done' }, { withCredentials: true });
+      await axios.patch(
+        `http://localhost:6800/api/v1/todo/updatetodo/${id}`,
+        { status: 'done' },
+        { withCredentials: true }
+      );
       fetchNotes();
     } catch (error) {
-      alert("Failed to mark as done");
+      alert('Failed to mark as done');
       console.error('Error:', error);
     }
   };
 
   const handleEdit = async (id) => {
     try {
-      await axios.patch(`http://localhost:6800/api/v1/todo/updatetodo/${id}`, {
-        title: editForm.title,
-        description: editForm.description,
-      }, { withCredentials: true });
+      await axios.patch(
+        `http://localhost:6800/api/v1/todo/updatetodo/${id}`,
+        {
+          title: editForm.title,
+          description: editForm.description,
+        },
+        { withCredentials: true }
+      );
       setEditId(null);
       setEditForm({ title: '', description: '' });
       fetchNotes();
     } catch (error) {
-      alert("Failed to edit note");
+      alert('Failed to edit note');
       console.error('Error editing note:', error);
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:6800/api/v1/todo/deletetodo/${id}`, { withCredentials: true });
+      await axios.delete(`http://localhost:6800/api/v1/todo/deletetodo/${id}`, {
+        withCredentials: true,
+      });
       fetchNotes();
     } catch (error) {
-      alert("Failed to delete note");
+      alert('Failed to delete note');
       console.error('Error deleting note:', error);
     }
   };
 
- const handleLogout = async () => {
-  try {
-    const res = await axios.post(
-      "http://localhost:6800/api/v1/user/logout",
-      {}, 
-      {
-        withCredentials: true 
-      }
-    );
-    console.log(res);
-    if(res.data.statusCode===200)
-   localStorage.removeItem("uid");
-    navigate("/login");
-  } catch (err) {
-    console.error("Logout error:", err.response?.data || err.message);
-  }
-};
+  const handleRevert = async (id) => {
+    try {
+      await axios.patch(
+        `http://localhost:6800/api/v1/todo/updatetodo/${id}`,
+        { status: 'pending' },
+        { withCredentials: true }
+      );
+      fetchNotes();
+    } catch (error) {
+      alert('Failed to revert note');
+      console.error('Error reverting note:', error);
+    }
+  };
+
+  const handleViewHistory = async (id) => {
+    alert(`Viewing history for note ID: ${id}`);
+  };
+
+  const handleShare = (id) => {
+    setShareNoteId(id);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const res = await axios.post(
+        'http://localhost:6800/api/v1/user/logout',
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      if (res.data.statusCode === 200) localStorage.removeItem('uid');
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout error:', err.response?.data || err.message);
+    }
+  };
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      {/* Logout button */}
+      {/* Top bar with title, shared notes, and logout */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">My Notes</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Logout
-        </button>
+        <div className="space-x-2">
+          <button
+            onClick={() => setShowSharedNotes(true)}
+            className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded"
+          >
+            Shared Notes
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
-      {/* New Note */}
+      {/* Add new note */}
       <div className="mb-6 p-4 border rounded bg-gray-50 shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">Add New Note</h2>
         <input
@@ -115,7 +159,9 @@ export default function Note() {
         <textarea
           placeholder="Description"
           value={newNote.description}
-          onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
+          onChange={(e) =>
+            setNewNote({ ...newNote, description: e.target.value })
+          }
           className="w-full p-2 mb-2 border rounded"
         />
         <button
@@ -132,19 +178,26 @@ export default function Note() {
         <p className="text-gray-500 text-center">No notes found.</p>
       ) : (
         notes.map((note) => (
-          <div key={note._id} className="border p-4 mb-4 rounded bg-white shadow-sm">
+          <div
+            key={note._id}
+            className="border p-4 mb-4 rounded bg-white shadow-sm"
+          >
             {editId === note._id ? (
               <>
                 <input
                   className="border p-2 mb-2 block w-full"
                   value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, title: e.target.value })
+                  }
                   placeholder="Title"
                 />
                 <textarea
                   className="border p-2 mb-2 block w-full"
                   value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
                   placeholder="Description"
                 />
                 <button
@@ -162,7 +215,9 @@ export default function Note() {
               </>
             ) : (
               <>
-                <h3 className="text-lg font-semibold text-gray-800">{note.title}</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {note.title}
+                </h3>
                 <p className="text-gray-700">{note.description}</p>
                 <p className="text-sm mt-1 text-gray-600">
                   Status: <strong>{note.status}</strong>
@@ -179,7 +234,10 @@ export default function Note() {
                     className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
                     onClick={() => {
                       setEditId(note._id);
-                      setEditForm({ title: note.title, description: note.description });
+                      setEditForm({
+                        title: note.title,
+                        description: note.description,
+                      });
                     }}
                   >
                     Edit
@@ -190,11 +248,43 @@ export default function Note() {
                   >
                     Delete
                   </button>
+                  <button
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded"
+                    onClick={() => handleRevert(note._id)}
+                    disabled={note.status !== 'done'}
+                  >
+                    Revert
+                  </button>
+                  <button
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded"
+                    onClick={() => handleViewHistory(note._id)}
+                  >
+                    View History
+                  </button>
+                  <button
+                    className="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1 rounded"
+                    onClick={() => handleShare(note._id)}
+                  >
+                    Share
+                  </button>
                 </div>
               </>
             )}
           </div>
         ))
+      )}
+
+      {/* Share Modal */}
+      {shareNoteId && (
+        <Share
+          noteId={shareNoteId}
+          onClose={() => setShareNoteId(null)}
+        />
+      )}
+
+      {/* Shared Notes Modal */}
+      {showSharedNotes && (
+        <SharedNotes onClose={() => setShowSharedNotes(false)} />
       )}
     </div>
   );

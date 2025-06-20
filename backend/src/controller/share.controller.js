@@ -13,6 +13,7 @@ const getUsers= asyncHandler(async(req,res)=>{
         throw new apiError(500,"spmething went wrong ")
 
       console.log('users',users)
+      res.json(new apiResponse(200,users))
 })
 
    const shareNote =asyncHandler(async(req,res)=>{
@@ -51,76 +52,113 @@ const getUsers= asyncHandler(async(req,res)=>{
 
   const getSharedNotes =asyncHandler(async(req,res)=>{
 
-     let  data = await Share.find({shareWithUser:req.user._id},{isEditable:1,shareNote:1}).sort({createdAt:1})
+     let  data = await Share.find({shareWithUser:req.user._id},{isEditable:1,shareNote:1,
+sharefrom_name:1}).sort({createdAt:1})
+    console.log("DATA=",data)
      
      for(let i=0;i<data.length;i++){
-         const note = await Note.findOne(
+         let note = await Note.findOne(
   { "Notes._id": data[i].shareNote },
   { "Notes.$": 1, _id: 0 }
-);
+
+ 
+); 
+      if(!note)throw new apiError(400, "not able to find")  
+    console.log(note,"---------",i)
     data[i]= data[i].toObject()
+  //  console.log(note.Notes[i].title)
      data[i].title=note.Notes[0].title
      data[i].description=note.Notes[0].description
      data[i].status=note.Notes[0].status
+     
           
      }
+    // console.log("-----------------------------")
+     //console.log("new data",data)
      res.json(new apiResponse(200,data,"successfully get the data"))
 
 
 
   })
 
-  const updateSharedPost =asyncHandler(async(req,res)=>{
+  const updateSharedNote =asyncHandler(async(req,res)=>{
+   console.log("here i am in update by other shared user")
     const {title, description,status}=req.body
+    console.log(title ,description,status)
     const noteid= new Types.ObjectId(req.params.id)
+    console.log(noteid)
 
-    const currentNote = await Note.findOne(
-  { "Notes._id": noteid },
-  { "Notes.$": 1, _id: 0 }
+    const existnote = await Note.findOne(
+  { "Notes._id": noteid }
+ 
 );
 
-  if(!currentNote) throw new apiError(400, "The user who created this note has deleted it ")
+console.log("check weather the notte exist",existnote)
 
-    console.log(currentNote)
+  if(!existnote) throw new apiError(400, "The user who created this note has deleted it ")
+
+//    console.log(currentNote)
 
     const  editable= await Share.findOne({shareNote:noteid,isEditable:true,shareWithUser:req.user.id})
 
     if(!editable)throw new apiError(400,"you cant update ")
 
 
-const updateFields = {};
+        if(!existnote)
+      throw new apiError(401,"unauthorized acces ")
 
-if (title) updateFields["Notes.$.title"] = title;
-if (description) updateFields["Notes.$.description"] = description;
-if (status) updateFields["Notes.$.status"] = status;
+  if(!title && !description&& !status) throw new apiError(400,"bad request")
 
-
-
+  
 
 
+  
+const i = existnote.Notes.findIndex(n => n._id.equals(noteid))
+ 
+
+console.log("chk",i)
+
+  if(i<0 ) throw new apiError(400, "The user who created this note has deleted it ")
+
+    
+   existnote.Notes[i].viewHistory.push({ prevtitle:existnote.Notes[i].title,
+    prevdescription:existnote.Notes[i].description,
+    prevstatus:existnote.Notes[i].status,
+    updatedBy:req.user.username,
+    __v:existnote.Notes[i].viewHistory.length==0?1:existnote.Notes[i].viewHistory.length+1})
+
+   if(title) existnote.Notes[i].title=title
+    if(description) existnote.Notes[i].description=description
+    if(status) existnote.Notes[i].status=status
+
+    
+    
+      
+
+  
+  
+
+    existnote.save()
 
 
-console.log(updateFields)
+    res.json(new apiResponse(200,existnote,"successful update by other user "))
 
 
 
 
 
-const result = await Note.findOneAndUpdate(
-  { "Notes._id": noteid },
-  {
-    $set: updateFields,
-    $push: {
-      "Notes.$.viewHistory": {
-        prevtitle: currentNote.title,
-        prevdescription: currentNote.description,
-        prevstatus: currentNote.status,
-        updatedby: req.user.username
-      }
-    }
-  },
-  { new: true, runValidators: true }
-);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -130,4 +168,4 @@ const result = await Note.findOneAndUpdate(
 
 
 
-export {getUsers, shareNote, getSharedNotes}
+export {getUsers, shareNote, getSharedNotes, updateSharedNote}

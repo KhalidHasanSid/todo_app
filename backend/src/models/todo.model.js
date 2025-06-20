@@ -57,7 +57,10 @@ const notesSchema = mongoose.Schema({
                 
                },
                 updatedby:
-                 { type:String}}
+                 { type:String},
+                  __v:{type:Number}
+                
+                }
 
                ]
 

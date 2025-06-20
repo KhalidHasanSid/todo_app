@@ -3,6 +3,9 @@ import Note from "../models/todo.model.js";
 import { apiError } from "../utils/apiError.js";
 import apiResponse from "../utils/apiResponse.js";
 import mongoose,{Types} from "mongoose";
+import Share from "../models/share.model.js";
+import { shareNote } from "./share.controller.js";
+
 
 const newTodo =asyncHandler(async(req, res, next)=>{
     console.log("!!",req.user._id)
@@ -79,18 +82,20 @@ const deleteTodo= asyncHandler(async (req,res,err)=>{
 
      if(!id) throw new apiError(400,"id is missing")
 
-//       const existnote = await Note.findOne({
-//   user: req.user.id,                    
-//   "Notes._id": id               
-// });
-    
-//     if(!existnote)
-//       throw new apiError(401,"unauthorized acces ")
+
 
      const result = await Note.findOneAndUpdate( { user: req.user._id },  { $pull: { Notes: { _id: id } } })
 
         if(!result)
             { throw new apiError(500,"unauthorized access")}
+
+         const  ifpresent = await Share.findOne({shareNote: id})
+
+         if(ifpresent) { const  deletefromShare = await Share.deleteMany({shareNote: id})}
+
+      
+
+       
 
         res.json(new apiResponse(200,result, "successfullly deleted "))
 
@@ -124,49 +129,70 @@ const updateTodo= asyncHandler(async(req,res)=>{
   user: req.user.id,                    
   "Notes._id": id               
 });
+console.log(existnote,"binding")
     
     if(!existnote)
       throw new apiError(401,"unauthorized acces ")
 
   if(!title && !description&& !status) throw new apiError(400,"bad request")
 
-  const updateFields = {};
-
-if (title) updateFields["Notes.$.title"] = title;
-if (description) updateFields["Notes.$.description"] = description;
-if (status) updateFields["Notes.$.status"] = status;
-console.log(updateFields)
+  
 
 
-const currentNote = await Note.findOne(
-  { "Notes._id": id },
-  { "Notes.$": 1, _id: 0 }
-);
+  
+const i = existnote.Notes.findIndex(n => n._id.equals(id))
+ 
 
-  if(!currentNote) throw new apiError(400, "The user who created this note has deleted it ")
+console.log("chk",i)
 
-    console.log(currentNote)
+  if(i<0 ) throw new apiError(400, "The user who created this note has deleted it ")
+
+    
+   existnote.Notes[i].viewHistory.push({ prevtitle:existnote.Notes[i].title,
+    prevdescription:existnote.Notes[i].description,
+    prevstatus:existnote.Notes[i].status,
+    updatedBy:req.user.username,
+    __v:existnote.Notes[i].viewHistory.length==0?1:existnote.Notes[i].viewHistory.length+1})
+
+   if(title) existnote.Notes[i].title=title
+    if(description) existnote.Notes[i].description=description
+    if(status) existnote.Notes[i].status=status
+
+    
+    
+      
+
+  
+  
+
+    existnote.save()
+    
 
 
-const result = await Note.updateOne(
-  { "Notes._id": id},
-  {
-    $set: updateFields,
-    $push: {
-      "Notes.$.viewHistory": {
-        prevtitle: currentNote.title,
-        prevdescription: currentNote.description,
-        prevstatus: currentNote.status,
-        updatedby: req.user.username
-      }
-    }
-  },
-  { new: true, runValidators: true }
-);
+    
+   
+    // currentNote.viewHistory.title
 
-if(!result)throw new apiError(400,"something went wrong")
 
-    res.json(new apiResponse(200,result,"updated succefully"))
+// const result = await Note.updateOne(
+//   { "Notes._id": id},
+//   {
+//     $set: updateFields,
+//     $push: {
+//       "Notes.$.viewHistory": {
+//         prevtitle: currentNote.title,
+//         prevdescription: currentNote.description,
+//         prevstatus: currentNote.status,
+//         updatedby: req.user.username
+//       }
+//     }
+//   },
+//   { new: true, runValidators: true }
+// );
+
+// if(!result)throw new apiError(400,"something went wrong")
+
+    res.json(new apiResponse(200,existnote,"updated succefully"))
 
 })
 
