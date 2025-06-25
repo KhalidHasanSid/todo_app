@@ -62,6 +62,8 @@ const getTodo =asyncHandler(async (req,res,next)=>{
     if(!result|| result.length===0)
          res.json(new apiResponse(200,[],"no notes found"))
 
+    
+
 
      res.json(new apiResponse(200,result.Notes,"successfull"))
 
@@ -144,19 +146,22 @@ const i = existnote.Notes.findIndex(n => n._id.equals(id))
  
 
 console.log("chk",i)
+ console.log("chking verion:",existnote.Notes[i].version +1)
 
-  if(i<0 ) throw new apiError(400, "The user who created this note has deleted it ")
+  if(i==-1 ) throw new apiError(400, "The user who created this note has deleted it ")
+   
 
     
    existnote.Notes[i].viewHistory.push({ prevtitle:existnote.Notes[i].title,
     prevdescription:existnote.Notes[i].description,
     prevstatus:existnote.Notes[i].status,
     updatedBy:req.user.username,
-    __v:existnote.Notes[i].viewHistory.length==0?1:existnote.Notes[i].viewHistory.length+1})
+    prevVersion:existnote.Notes[i].version})
 
    if(title) existnote.Notes[i].title=title
     if(description) existnote.Notes[i].description=description
     if(status) existnote.Notes[i].status=status
+    existnote.Notes[i].version= existnote.Notes[i].version+1
 
     
     
@@ -192,7 +197,7 @@ console.log("chk",i)
 
 // if(!result)throw new apiError(400,"something went wrong")
 
-    res.json(new apiResponse(200,existnote,"updated succefully"))
+    res.json(new apiResponse(200,existnote[i],"updated succefully"))
 
 })
 

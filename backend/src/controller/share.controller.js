@@ -125,11 +125,13 @@ console.log("chk",i)
     prevdescription:existnote.Notes[i].description,
     prevstatus:existnote.Notes[i].status,
     updatedBy:req.user.username,
-    __v:existnote.Notes[i].viewHistory.length==0?1:existnote.Notes[i].viewHistory.length+1})
+    prevVersion:existnote.Notes[i].version})
 
    if(title) existnote.Notes[i].title=title
     if(description) existnote.Notes[i].description=description
     if(status) existnote.Notes[i].status=status
+    existnote.Notes[i].version= existnote.Notes[i].version+1
+
 
     
     
