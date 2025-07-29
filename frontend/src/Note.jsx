@@ -1,22 +1,30 @@
+// Install first: npm install react-quill --legacy-peer-deps
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import Share from './Share';
 import SharedNotes from './SharedNotes';
 import NoteHistory from './ViewHistory';
+import Bin from './Bin';
 
 export default function Note() {
   const [notes, setNotes] = useState([]);
   const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', description: '' });
-  const [newNote, setNewNote] = useState({ title: '', description: '' });
+  const [newNote, setNewNote] = useState({ title: '', description: '',tag:'' });
+  const [noteKey, setNoteKey] = useState(0); 
   const [shareNoteId, setShareNoteId] = useState(null);
   const [showSharedNotes, setShowSharedNotes] = useState(false);
   const [viewHistoryNoteId, setViewHistoryNoteId] = useState(null);
+  const [showBin, setShowBin] = useState(false);
+  const [counts, setCounts] = useState({ notes: 0, sharednotes: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchNotes();
+    fetchNoteCounts();
   }, []);
 
   const fetchNotes = async () => {
@@ -25,8 +33,34 @@ export default function Note() {
         withCredentials: true,
       });
       setNotes(res.data.data);
+      fetchNoteCounts();
     } catch (err) {
       console.error('Error fetching notes:', err);
+    }
+  };
+
+  const fetchfilteredNotes=async (value )=>{
+try {
+      const res = await axios.get(`http://localhost:6800/api/v1/todo/getfilteredtodo/${value}`, {
+        withCredentials: true,
+      });
+      setNotes(res.data.data);
+      fetchNoteCounts();
+    } catch (err) {
+      console.error('Error fetching notes:', err);
+    }
+  };
+  
+
+  const fetchNoteCounts = async () => {
+    try {
+      const res = await axios.get('http://localhost:6800/api/v1/todo/count', {
+        withCredentials: true,
+      });
+      setCounts(res.data.data);
+
+    } catch (err) {
+      console.error('Error fetching note counts:', err);
     }
   };
 
@@ -37,7 +71,9 @@ export default function Note() {
         withCredentials: true,
       });
       setNewNote({ title: '', description: '' });
+      setNoteKey((prev) => prev + 1); 
       fetchNotes();
+      fetchNoteCounts();
     } catch (err) {
       console.error('Failed to add note:', err.response?.data || err.message);
     }
@@ -76,13 +112,15 @@ export default function Note() {
   };
 
   const handleDelete = async (id) => {
+    setNotes((prev) => prev.filter((note) => note._id !== id));
     try {
       await axios.delete(`http://localhost:6800/api/v1/todo/deletetodo/${id}`, {
         withCredentials: true,
       });
-      fetchNotes();
+      fetchNoteCounts();
     } catch (err) {
       console.error('Failed to delete note:', err);
+      fetchNotes();
     }
   };
 
@@ -95,8 +133,6 @@ export default function Note() {
       );
       if (res.status === 200 || res.status === 204) {
         fetchNotes();
-      } else {
-        console.warn('Unexpected response while reverting note');
       }
     } catch (err) {
       console.error('Failed to revert note:', err.response?.data?.message || err.message);
@@ -128,12 +164,19 @@ export default function Note() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">My Notes</h1>
-        <div className="space-x-2">
+        <div className="space-x-2 flex items-center">
           <button
             onClick={() => setShowSharedNotes(true)}
             className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded"
           >
             Shared Notes
+          </button>
+          <button
+            onClick={() => setShowBin(true)}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded"
+            title="View Bin"
+          >
+            🗑
           </button>
           <button
             onClick={handleLogout}
@@ -144,40 +187,73 @@ export default function Note() {
         </div>
       </div>
 
-      {/* Add Note */}
-      <div className="mb-6 p-4 border rounded bg-gray-50 shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4">Add New Note</h2>
-        <input
-          type="text"
-          placeholder="Title"
-          value={newNote.title}
-          onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-          className="w-full p-2 mb-2 border rounded"
-        />
-        <textarea
-          placeholder="Description"
-          value={newNote.description}
-          onChange={(e) => setNewNote({ ...newNote, description: e.target.value })}
-          className="w-full p-2 mb-2 border rounded"
-        />
-        <button
-          onClick={handleAddNote}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-        >
-          Add Note
-        </button>
+      {/* Note Summary */}
+      <div className="mb-6 text-sm text-gray-700">
+        <p>Total Notes: <strong>{counts.notes}</strong></p>
+        <p>Shared notes with others: <strong>{counts.sharednotes}</strong></p>
       </div>
+
+    {/* Add Note */}
+<div className="mb-6 p-4 border rounded bg-gray-50 shadow-sm">
+  <h2 className="text-2xl font-semibold mb-4">Add New Note</h2>
+  <input
+    key={noteKey + '-title'}
+    type="text"
+    placeholder="Title"
+    value={newNote.title}
+    onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+    className="w-full p-2 mb-2 border rounded"
+  />
+  <ReactQuill
+    key={noteKey + '-desc'}
+    theme="snow"
+    value={newNote.description}
+    onChange={(value) => setNewNote({ ...newNote, description: value })}
+    className="mb-4"
+  />
+
+  <div className="flex justify-between items-center mb-4">
+    <select
+      value={newNote.tag}
+      onChange={(e) => setNewNote({ ...newNote, tag: e.target.value })}
+      className="border p-2 rounded w-1/2"
+    >
+      <option value="">Select Category</option>
+      <option value="work">Work</option>
+      <option value="personal">Personal</option>
+    </select>
+
+    <button
+      onClick={handleAddNote}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded ml-4"
+    >
+      Add Note
+    </button>
+  </div>
+</div>
+       <select
+  className="border p-2 rounded w-1/2"
+  onChange={(e) => {
+    const value = e.target.value;
+    if (value === "") {
+      fetchNotes(); 
+    } else {
+      fetchfilteredNotes(value); 
+    }
+  }}
+>filter
+  <option value="">All</option>
+  <option value="work">Work</option>
+  <option value="personal">Personal</option>
+</select>
 
       {/* Notes */}
       <h2 className="text-xl font-bold mb-4">All Notes</h2>
-      {notes.length === 0 ? (
+      {!Array.isArray(notes) || notes.length === 0 ? (
         <p className="text-gray-500 text-center">No notes found.</p>
       ) : (
         notes.map((note) => (
-          <div
-            key={note._id}
-            className="border p-4 mb-4 rounded bg-white shadow-sm"
-          >
+          <div key={note._id} className="border p-4 mb-4 rounded bg-white shadow-sm">
             {editId === note._id ? (
               <>
                 <input
@@ -186,20 +262,19 @@ export default function Note() {
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                   placeholder="Title"
                 />
-                <textarea
-                  className="border p-2 mb-2 block w-full"
+                <ReactQuill
+                  theme="snow"
                   value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  placeholder="Description"
+                  onChange={(value) => setEditForm({ ...editForm, description: value })}
                 />
                 <button
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 mr-2 rounded"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 mr-2 rounded mt-2"
                   onClick={() => handleEdit(note._id)}
                 >
                   Save
                 </button>
                 <button
-                  className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded"
+                  className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded mt-2"
                   onClick={() => setEditId(null)}
                 >
                   Cancel
@@ -207,13 +282,19 @@ export default function Note() {
               </>
             ) : (
               <>
-                <h3 className="text-lg font-semibold text-gray-800">
-                  {note.title}
-                </h3>
-                <p className="text-gray-700">{note.description}</p>
+                <h3 className="text-lg font-semibold text-gray-800">{note.title}</h3>
+                <div
+                  className="text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: note.description }}
+                />
                 <p className="text-sm mt-1 text-gray-600">
                   Status: <strong>{note.status}</strong>
                 </p>
+                <p className="text-sm mt-1 text-gray-600">
+                  updatedAt: <strong>{note.date}</strong>
+                </p>
+
+                
                 <div className="mt-3 space-x-2">
                   <button
                     onClick={() => handleDone(note._id)}
@@ -255,21 +336,22 @@ export default function Note() {
                     Share
                   </button>
                 </div>
+                 <p className="text-sm mt-1 text-gray-600">
+                 tag : <strong>{note.tag}</strong>
+                </p>
               </>
             )}
           </div>
         ))
       )}
 
-      {/* Modals */}
+     
       {shareNoteId && <Share noteId={shareNoteId} onClose={() => setShareNoteId(null)} />}
       {showSharedNotes && <SharedNotes onClose={() => setShowSharedNotes(false)} />}
       {viewHistoryNoteId && (
-        <NoteHistory
-          noteId={viewHistoryNoteId}
-          onClose={() => setViewHistoryNoteId(null)}
-        />
+        <NoteHistory noteId={viewHistoryNoteId} onClose={() => setViewHistoryNoteId(null)} />
       )}
+      {showBin && <Bin onClose={() => setShowBin(false)} />}
     </div>
   );
 }

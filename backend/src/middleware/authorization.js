@@ -14,7 +14,7 @@ if(!token)  throw new apiError(401,"token not find")
         throw new apiError(400,"usernot exist middle say")
 
     req.user =user
-    console.log("=============Auth END")
+ 
     next();
 })
 

@@ -124,12 +124,14 @@ console.log("chk",i)
    existnote.Notes[i].viewHistory.push({ prevtitle:existnote.Notes[i].title,
     prevdescription:existnote.Notes[i].description,
     prevstatus:existnote.Notes[i].status,
-    updatedBy:req.user.username,
+     prevdate:existnote.Notes[i].date,
+    updatedby:req.user.username,
     prevVersion:existnote.Notes[i].version})
 
    if(title) existnote.Notes[i].title=title
     if(description) existnote.Notes[i].description=description
     if(status) existnote.Notes[i].status=status
+     existnote.Notes[i].date=new Date()
     existnote.Notes[i].version= existnote.Notes[i].version+1
 
 
@@ -140,7 +142,7 @@ console.log("chk",i)
   
   
 
-    existnote.save()
+     await existnote.save()
 
 
     res.json(new apiResponse(200,existnote,"successful update by other user "))

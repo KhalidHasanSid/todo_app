@@ -41,6 +41,17 @@ const notesSchema = mongoose.Schema({
                   default:1
                 },
 
+                isdeleted:{
+                  default:false,
+                  type: Boolean
+                },
+
+               tag:{
+                  type:String,
+                  enum:["work",'personal','other'],
+                  default:'other'
+                },
+
                viewHistory:[
                  {
                prevtitle: {type:String,
@@ -66,7 +77,7 @@ const notesSchema = mongoose.Schema({
                 updatedby:
                  { type:String},
 
-                  prevVersion:{type:Number}
+                prevVersion:{type:Number}
                 
                 }
 

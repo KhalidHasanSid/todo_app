@@ -50,10 +50,11 @@ export default function ViewHistory({ noteId, onClose }) {
                 <h3 className="font-bold text-lg">Version:{version.prevVersion}</h3>
 
                 <h3 className="font-bold text-lg">title: {version.prevtitle}</h3>
-                <p className="text-gray-700">description: {version.prevdescription}</p>
+                <p className="text-gray-700"  dangerouslySetInnerHTML={{ __html: version.prevdescription }}></p>
                 <p className="text-gray-700">status: {version.prevstatus}</p>
+                 <p className="text-gray-700">date: {version.prevdate}</p>
                 <p className="text-sm text-gray-500">
-                  Updated By: {version.updatedBy|| 'Unknown'} <br />
+                  Updated By: {version.updatedby|| 'Unknown'} <br />
                 
                 </p>
               </li>

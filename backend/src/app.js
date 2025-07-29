@@ -18,10 +18,12 @@ import userRouter from './route/user.route.js'
 import todoRouter from './route/todo.router.js'
 import shareRouter from './route/share.route.js'
 import revert_viewhistory from './route/revert&viewHistory.route.js'
+import binRouter from './route/bin.route.js'
 App.use('/api/v1/user',userRouter)
 App.use('/api/v1/todo',todoRouter)
 App.use('/api/v1/shareTo',shareRouter)
 App.use('/api/v1/revertHistory',revert_viewhistory)
+App.use('/api/v1/bin',binRouter)
 
 
 export default App 

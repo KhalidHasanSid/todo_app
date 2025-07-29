@@ -9,7 +9,8 @@ import { shareNote } from "./share.controller.js";
 
 const newTodo =asyncHandler(async(req, res, next)=>{
     console.log("!!",req.user._id)
-    const {title,description} =req.body 
+    console.log("?????????????????????",req.body)
+    const {title,description,tag} =req.body 
 
     if(!title||!description) throw new apiError(400,"something missing")
 
@@ -23,7 +24,8 @@ const newTodo =asyncHandler(async(req, res, next)=>{
     Notes:[
        { title:title,
          date: new Date(),
-        description: description
+        description: description,
+          tag: tag? tag :"other"
     }
 
     ]
@@ -37,7 +39,8 @@ const newTodo =asyncHandler(async(req, res, next)=>{
     await  userNote.Notes.push(
     {  title:title,
          date: new Date(),
-        description: description
+        description: description,
+         tag: tag? tag :"other"
     })}
    userNote= await userNote.save()
 
@@ -51,29 +54,36 @@ const newTodo =asyncHandler(async(req, res, next)=>{
 })
 
 
-const getTodo =asyncHandler(async (req,res,next)=>{
+const getTodo = asyncHandler(async (req, res, next) => {
+ 
+
+  const result = await Note.findOne({
+    user: req.user._id
+  }).select("-Notes.viewHistory");
+
+  if (!result || !result.Notes || result.Notes.length === 0) {
+    return res.json(new apiResponse(200, [], "no notes found"));
+  }
+
+  
+  const filteredNotes = result.Notes.filter(note => note.isdeleted === false);
+
+  if (filteredNotes.length === 0) {
+    return res.json(new apiResponse(200, [], "no notes found"));
+  }
+
+  
+
+  res.json(new apiResponse(200, filteredNotes, "successful"));
+});
 
 
-  console.log("==================")
 
-    const result =await Note.findOne({user:req.user._id}).select(
-        "-Notes.viewHistory"
-    )
-    if(!result|| result.length===0)
-         res.json(new apiResponse(200,[],"no notes found"))
+
+
 
     
 
-
-     res.json(new apiResponse(200,result.Notes,"successfull"))
-
-
-
-
-
-
-    
-})
 
 const deleteTodo= asyncHandler(async (req,res,err)=>{
 
@@ -86,7 +96,28 @@ const deleteTodo= asyncHandler(async (req,res,err)=>{
 
 
 
-     const result = await Note.findOneAndUpdate( { user: req.user._id },  { $pull: { Notes: { _id: id } } })
+      const existnote = await Note.findOne({
+  user: req.user.id,                    
+  "Notes._id": id               
+});
+
+    
+    if(!existnote)
+      throw new apiError(401,"unauthorized acces ")
+
+    const i = existnote.Notes.findIndex(n => n._id.equals(id))
+    
+  if(i==-1 ) throw new apiError(400, "The user who created this note has deleted it ")
+
+    existnote.Notes[i].isdeleted =true
+
+    await  existnote.save()
+
+
+
+
+
+
 
         if(!result)
             { throw new apiError(500,"unauthorized access")}
@@ -131,7 +162,7 @@ const updateTodo= asyncHandler(async(req,res)=>{
   user: req.user.id,                    
   "Notes._id": id               
 });
-console.log(existnote,"binding")
+
     
     if(!existnote)
       throw new apiError(401,"unauthorized acces ")
@@ -145,8 +176,6 @@ console.log(existnote,"binding")
 const i = existnote.Notes.findIndex(n => n._id.equals(id))
  
 
-console.log("chk",i)
- console.log("chking verion:",existnote.Notes[i].version +1)
 
   if(i==-1 ) throw new apiError(400, "The user who created this note has deleted it ")
    
@@ -155,7 +184,8 @@ console.log("chk",i)
    existnote.Notes[i].viewHistory.push({ prevtitle:existnote.Notes[i].title,
     prevdescription:existnote.Notes[i].description,
     prevstatus:existnote.Notes[i].status,
-    updatedBy:req.user.username,
+    prevdate:existnote.Notes[i].date,
+    updatedby:req.user.username,
     prevVersion:existnote.Notes[i].version})
 
    if(title) existnote.Notes[i].title=title
@@ -170,32 +200,13 @@ console.log("chk",i)
   
   
 
-    existnote.save()
+   await  existnote.save()
     
 
 
     
    
-    // currentNote.viewHistory.title
-
-
-// const result = await Note.updateOne(
-//   { "Notes._id": id},
-//   {
-//     $set: updateFields,
-//     $push: {
-//       "Notes.$.viewHistory": {
-//         prevtitle: currentNote.title,
-//         prevdescription: currentNote.description,
-//         prevstatus: currentNote.status,
-//         updatedby: req.user.username
-//       }
-//     }
-//   },
-//   { new: true, runValidators: true }
-// );
-
-// if(!result)throw new apiError(400,"something went wrong")
+ 
 
     res.json(new apiResponse(200,existnote[i],"updated succefully"))
 
@@ -203,9 +214,70 @@ console.log("chk",i)
 
 
 
+const countNotes = asyncHandler(async (req, res) => {
+ 
+
+ const result = await Note.findOne({
+      user: req.user._id
+    }).select("-Notes.viewHistory");
+  
+    if (!result || !result.Notes || result.Notes.length === 0) {
+      return res.json(new apiResponse(200, [], "no notes found"));
+    }
+  
+    
+    const notecount = result.Notes.filter(note => note.isdeleted === false);
+  
+
+  const sharednotes = await Share.countDocuments({  sharefrom_id: req.user._id },);
+
+  
+  const notes= notecount.length
+
+  res.json(new apiResponse(200, { notes, sharednotes }, "successful"));
+});
 
 
 
 
 
-export {newTodo ,getTodo, deleteTodo, updateTodo}
+
+
+
+
+
+
+
+
+
+ const getfilteredTodo =asyncHandler(async(req,res)=>{
+  console.log("==================");
+
+  const result = await Note.findOne({
+    user: req.user._id
+  }).select("-Notes.viewHistory");
+
+  if (!result || !result.Notes || result.Notes.length === 0) {
+    return res.json(new apiResponse(200, [], "no notes found"));
+  }
+
+  
+  const filteredNotes = result.Notes.filter(note => note.isdeleted === false &&note.tag===req.params.id  );
+
+  if (filteredNotes.length === 0) {
+    return res.json(new apiResponse(200, [], "no notes found"));
+  }
+
+  console.log(filteredNotes);
+
+  res.json(new apiResponse(200, filteredNotes, "successful"));
+   
+
+ })
+
+
+
+
+
+
+export {newTodo ,getTodo, deleteTodo, updateTodo, countNotes,getfilteredTodo}

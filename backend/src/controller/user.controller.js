@@ -49,51 +49,11 @@ const registerUser =asyncHandler(async(req,res, err)=>{
 
 
 
-// const login =()=>asyncHandler(async(req,res,err)=>{
-//   console.log("==============")
-//    const {username  ,password} =req.body
-//    console.log("hello world")
-//    if(!username || !password)
-//     throw new apiError(400,"something missing!")
 
-//    const existUser = await User.findOne({
-//     $or: [
-//       { username: username },
-//       { email: username }
-//     ]
-//   })
-//   if(!existUser)
-//     throw new apiError(400,"something missing!")
-
-//   const authenticated = existUser.validatePassword(password)
-
-//   if(!authenticated)
-
-//     throw new apiError(400,"Invalid Password!")
-
-//   const sessionID =uuidv4()
-
-//   setUser(sessionID,existUser)
-//    console.log(getUser(sessionID))
-
-
-//   res.cookie("uid", sessionID, {
-//           httpOnly: true,
-//           secure: true,
-//           sameSite: "lax",
-//         }).json( new ApiResponse(200,  "Login successful"))
-  
-  
-
-  
-
-
-
-// })
 
 const loginUser = asyncHandler(async(req,res,err)=>{
   const {username  ,password} =req.body
-  // console.log("hello world",username,"=",password)
+ 
    if(!username || !password)
     throw new apiError(400,"something missing!")
 
@@ -109,7 +69,7 @@ const loginUser = asyncHandler(async(req,res,err)=>{
 
    let authenticated=false 
   authenticated = await existUser.validatePassword(password)
-  //console.log(authenticated)
+  
 
   if(!authenticated)
 
@@ -119,7 +79,7 @@ const loginUser = asyncHandler(async(req,res,err)=>{
 
   setUser(sessionID,existUser)
 
-  console.log("============= login end")
+ 
    
 
 
@@ -134,7 +94,7 @@ const loginUser = asyncHandler(async(req,res,err)=>{
 
 
 const logout= asyncHandler(async(req,res)=>{
-  console.log("bbb")
+
   const token= req.cookies.uid
   
 
